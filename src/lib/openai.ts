@@ -31,18 +31,94 @@ export async function extractEventDetails(message: string) {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
-  // Check if message contains event-like text
+  // Simple regex patterns to extract date and time information
+  const datePattern =
+    /(?:on|for|at)\s+([a-z]+day|tomorrow|\d{1,2}(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)|\d{1,2}[/.-]\d{1,2}(?:[/.-]\d{2,4})?)/i;
+  const timePattern =
+    /(?:at|from)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?(?:\s*-\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)?)?)\b/i;
+
+  // New patterns for phone call specific information
+  const namePattern =
+    /(?:with|for|name is|call with|contact)\s+([A-Za-z\s]+?)(?:\s+at|\s+on|\s+\d|\.|,|$)/i;
+  const phonePattern =
+    /(?:phone|number|call|dial|tel)(?:\s+(?:number|is))?(?:\s+at)?\s+([+\d\s\(\)\-]{7,})/i;
+
+  // Check if message contains call-related text
   if (
+    message.toLowerCase().includes("call") ||
+    message.toLowerCase().includes("phone") ||
+    message.toLowerCase().includes("talk") ||
+    message.toLowerCase().includes("speak") ||
     message.toLowerCase().includes("meeting") ||
     message.toLowerCase().includes("appointment") ||
-    message.toLowerCase().includes("schedule")
+    message.toLowerCase().includes("schedule") ||
+    message.toLowerCase().includes("reminder")
   ) {
+    // Extract potential title (first sentence or up to 50 chars)
+    const titleMatch = message.match(/^([^.!?]+)[.!?]/);
+    const title = titleMatch ? titleMatch[1].trim() : message.substring(0, 50);
+
+    // Extract date if present
+    const dateMatch = message.match(datePattern);
+    let eventDate = new Date();
+    if (dateMatch && dateMatch[1]) {
+      const dateText = dateMatch[1].toLowerCase();
+
+      if (dateText.includes("tomorrow")) {
+        eventDate.setDate(eventDate.getDate() + 1);
+      } else if (dateText.match(/\d{1,2}[/.-]\d{1,2}(?:[/.-]\d{2,4})?/)) {
+        // Handle numeric date formats like DD/MM/YYYY
+        const parts = dateText.split(/[\/.-]/);
+        if (parts.length >= 2) {
+          const day = parseInt(parts[0]);
+          const month = parseInt(parts[1]) - 1; // JS months are 0-indexed
+          const year =
+            parts.length > 2 ? parseInt(parts[2]) : eventDate.getFullYear();
+          eventDate = new Date(year < 100 ? year + 2000 : year, month, day);
+        }
+      }
+      // More date parsing could be added here
+    }
+
+    // Extract time if present
+    const timeMatch = message.match(timePattern);
+    let time = "09:00";
+    if (timeMatch && timeMatch[1]) {
+      const timeText = timeMatch[1].toLowerCase();
+      // Simple time parsing - could be expanded
+      if (timeText.includes(":")) {
+        time = timeText.split("-")[0].trim();
+      } else {
+        const hour = parseInt(timeText);
+        if (timeText.includes("pm") && hour < 12) {
+          time = `${hour + 12}:00`;
+        } else {
+          time = `${hour}:00`;
+        }
+      }
+    }
+
+    // Extract contact name if present
+    const nameMatch = message.match(namePattern);
+    const contactName = nameMatch ? nameMatch[1].trim() : null;
+
+    // Extract phone number if present
+    const phoneMatch = message.match(phonePattern);
+    const phoneNumber = phoneMatch ? phoneMatch[1].trim() : null;
+
+    // Generate call notes from the message
+    const callNotes = `AI summary: ${message.substring(0, 150)}${message.length > 150 ? "..." : ""}`;
+
     return {
       hasEvent: true,
-      title: "Sample Event",
-      date: new Date().toISOString().split("T")[0],
-      time: "10:00",
-      description: "This is a sample event extracted from the message.",
+      title: title.includes("call") ? title : `Phone call: ${title}`,
+      date: eventDate.toISOString().split("T")[0],
+      time: time,
+      description: message,
+      contact_name: contactName,
+      phone_number: phoneNumber,
+      call_notes: callNotes,
+      call_type: "phone_call",
     };
   }
 

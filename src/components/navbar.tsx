@@ -20,6 +20,7 @@ export default async function Navbar() {
           className="text-xl font-bold flex items-center gap-2"
         >
           <MessageSquare className="w-6 h-6 text-whatsapp-darkgreen" />
+
           <span>WhatsApp ChatBot AI</span>
         </Link>
         <div className="flex gap-4 items-center">

@@ -87,6 +87,63 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          call_notes: string | null
+          call_type: string | null
+          color: string | null
+          contact_name: string | null
+          created_at: string | null
+          description: string | null
+          end_time: string | null
+          id: string
+          is_all_day: boolean | null
+          location: string | null
+          phone_number: string | null
+          start_time: string
+          status: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          call_notes?: string | null
+          call_type?: string | null
+          color?: string | null
+          contact_name?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_time?: string | null
+          id?: string
+          is_all_day?: boolean | null
+          location?: string | null
+          phone_number?: string | null
+          start_time: string
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          call_notes?: string | null
+          call_type?: string | null
+          color?: string | null
+          contact_name?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_time?: string | null
+          id?: string
+          is_all_day?: boolean | null
+          location?: string | null
+          phone_number?: string | null
+          start_time?: string
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           body: string | null

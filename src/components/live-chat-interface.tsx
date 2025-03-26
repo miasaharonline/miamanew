@@ -1,0 +1,492 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import {
+  Send,
+  Paperclip,
+  Mic,
+  SmilePlus,
+  Bot,
+  Smartphone,
+  ChevronDown,
+  Check,
+  RefreshCw,
+  X,
+  MessageSquare,
+  Plus,
+} from "lucide-react";
+import { createClient } from "../../supabase/client";
+import { Tables } from "@/types/supabase";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Avatar } from "./ui/avatar";
+import { AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+
+interface Message {
+  id: string;
+  body: string;
+  timestamp: number;
+  isFromMe: boolean;
+  isAI?: boolean;
+}
+
+interface Conversation {
+  id: string;
+  name: string;
+  messages: Message[];
+  isTyping: boolean;
+}
+
+interface LiveChatInterfaceProps {
+  selectedChat?: string;
+  aiActive?: boolean;
+  userId?: string;
+}
+
+type WhatsAppAccount = Tables<"whatsapp_accounts">;
+
+export default function LiveChatInterface({
+  selectedChat,
+  aiActive = true,
+  userId,
+}: LiveChatInterfaceProps) {
+  const [conversations, setConversations] = useState<Conversation[]>([
+    {
+      id: "default",
+      name: "New Chat",
+      messages: [
+        {
+          id: "welcome-msg",
+          body: "Welcome to the chat! How can I help you today?",
+          timestamp: Date.now() / 1000,
+          isFromMe: false,
+          isAI: true,
+        },
+      ],
+      isTyping: false,
+    },
+  ]);
+  const [activeConversationId, setActiveConversationId] = useState("default");
+  const [inputMessage, setInputMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [accounts, setAccounts] = useState<WhatsAppAccount[]>([]);
+  const [selectedAccount, setSelectedAccount] =
+    useState<WhatsAppAccount | null>(null);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
+
+  // Get active conversation
+  const activeConversation =
+    conversations.find((conv) => conv.id === activeConversationId) ||
+    conversations[0];
+
+  // Fetch WhatsApp accounts
+  const fetchAccounts = async () => {
+    if (!userId) return;
+
+    setLoadingAccounts(true);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("whatsapp_accounts")
+        .select("*")
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setAccounts(data);
+        if (!selectedAccount) {
+          setSelectedAccount(data[0]);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching WhatsApp accounts:", error);
+    } finally {
+      setLoadingAccounts(false);
+    }
+  };
+
+  // Set up real-time subscription for WhatsApp accounts
+  useEffect(() => {
+    if (!userId) return;
+
+    fetchAccounts();
+
+    const supabase = createClient();
+
+    // Subscribe to changes in the whatsapp_accounts table
+    const subscription = supabase
+      .channel("whatsapp_accounts_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "whatsapp_accounts" },
+        (payload) => {
+          fetchAccounts();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [userId]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [activeConversation]);
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim()) return;
+
+    setLoading(true);
+
+    try {
+      // Add user message to chat
+      const userMessage = {
+        id: `user-${Date.now()}`,
+        body: inputMessage,
+        timestamp: Date.now() / 1000,
+        isFromMe: true,
+      };
+
+      // Update the active conversation with the new message
+      setConversations((prevConversations) =>
+        prevConversations.map((conv) =>
+          conv.id === activeConversationId
+            ? {
+                ...conv,
+                messages: [...conv.messages, userMessage],
+              }
+            : conv,
+        ),
+      );
+
+      setInputMessage("");
+
+      // Simulate AI response
+      if (aiActive) {
+        // Set typing indicator for the active conversation
+        setConversations((prevConversations) =>
+          prevConversations.map((conv) =>
+            conv.id === activeConversationId
+              ? { ...conv, isTyping: true }
+              : conv,
+          ),
+        );
+
+        // This is where you would call your OpenAI API
+        // For now, we'll simulate a delay and response
+        setTimeout(() => {
+          const aiResponse = {
+            id: `ai-${Date.now()}`,
+            body: "This is a simulated AI response. In a real implementation, this would be generated by OpenAI's API.",
+            timestamp: Date.now() / 1000,
+            isFromMe: false,
+            isAI: true,
+          };
+
+          // Update the active conversation with the AI response and remove typing indicator
+          setConversations((prevConversations) =>
+            prevConversations.map((conv) =>
+              conv.id === activeConversationId
+                ? {
+                    ...conv,
+                    messages: [...conv.messages, aiResponse],
+                    isTyping: false,
+                  }
+                : conv,
+            ),
+          );
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      // Remove typing indicator in case of error
+      setConversations((prevConversations) =>
+        prevConversations.map((conv) =>
+          conv.id === activeConversationId
+            ? { ...conv, isTyping: false }
+            : conv,
+        ),
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createNewConversation = () => {
+    const newId = `conv-${Date.now()}`;
+    const newConversation: Conversation = {
+      id: newId,
+      name: `Chat ${conversations.length + 1}`,
+      messages: [
+        {
+          id: `welcome-${newId}`,
+          body: "How can I help you today?",
+          timestamp: Date.now() / 1000,
+          isFromMe: false,
+          isAI: true,
+        },
+      ],
+      isTyping: false,
+    };
+
+    setConversations([...conversations, newConversation]);
+    setActiveConversationId(newId);
+  };
+
+  const closeConversation = (id: string) => {
+    if (conversations.length <= 1) return; // Don't remove the last conversation
+
+    const newConversations = conversations.filter((conv) => conv.id !== id);
+    setConversations(newConversations);
+
+    // If we're closing the active conversation, switch to another one
+    if (id === activeConversationId) {
+      setActiveConversationId(newConversations[0].id);
+    }
+  };
+
+  return (
+    <div className="flex-1 flex flex-col bg-white h-full">
+      {/* Chat header */}
+      <div className="bg-whatsapp-darkgreen text-white py-3 px-4 flex items-center justify-between">
+        <div className="flex-1 flex items-center gap-3">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                className="p-1 h-auto text-white hover:bg-whatsapp-green flex items-center gap-2"
+              >
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8 bg-whatsapp-green border-2 border-white">
+                    <AvatarFallback className="bg-whatsapp-green text-white text-xs">
+                      {selectedAccount
+                        ? selectedAccount.account_name
+                            .substring(0, 2)
+                            .toUpperCase()
+                        : "WA"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col items-start">
+                    <h2 className="font-medium text-sm">
+                      {selectedAccount
+                        ? selectedAccount.account_name
+                        : "Select Account"}
+                    </h2>
+                    <p className="text-xs opacity-80">
+                      {activeConversation.isTyping
+                        ? "typing..."
+                        : `${activeConversation.messages.length} messages`}
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown size={16} />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-2" align="start">
+              <div className="space-y-2">
+                <div className="text-sm font-medium px-2 py-1.5 text-gray-500">
+                  WhatsApp Accounts
+                </div>
+                {loadingAccounts ? (
+                  <div className="flex items-center justify-center py-4">
+                    <RefreshCw className="h-5 w-5 text-gray-400 animate-spin" />
+                  </div>
+                ) : accounts.length === 0 ? (
+                  <div className="text-sm text-gray-500 px-2 py-2">
+                    No accounts connected. Add accounts in the Accounts page.
+                  </div>
+                ) : (
+                  accounts.map((account) => (
+                    <Button
+                      key={account.id}
+                      variant="ghost"
+                      className={`w-full justify-start px-2 py-2 h-auto ${selectedAccount?.id === account.id ? "bg-gray-100" : ""}`}
+                      onClick={() => setSelectedAccount(account)}
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        <Avatar className="h-8 w-8 bg-whatsapp-green">
+                          <AvatarFallback className="bg-whatsapp-green text-white text-xs">
+                            {account.account_name.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 text-left">
+                          <p className="text-sm font-medium">
+                            {account.account_name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {account.phone_number || "No phone number"}
+                          </p>
+                        </div>
+                        {selectedAccount?.id === account.id && (
+                          <Check className="h-4 w-4 text-whatsapp-green" />
+                        )}
+                      </div>
+                    </Button>
+                  ))
+                )}
+                <div className="pt-2 border-t mt-2">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-whatsapp-darkgreen hover:text-whatsapp-darkgreen hover:bg-whatsapp-lightgreen/50"
+                    onClick={() =>
+                      (window.location.href = "/dashboard/accounts")
+                    }
+                  >
+                    <Smartphone className="mr-2 h-4 w-4" />
+                    Manage Accounts
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+        {aiActive && (
+          <div className="px-2 py-1 bg-green-600 text-white text-xs rounded-full flex items-center gap-1">
+            <Bot size={12} />
+            <span>AI Active</span>
+          </div>
+        )}
+      </div>
+
+      {/* Conversation tabs */}
+      <div className="bg-gray-50 border-b border-gray-200">
+        <div className="flex items-center overflow-x-auto px-2 py-1 gap-1 max-w-full">
+          {conversations.map((conv) => (
+            <div key={conv.id} className="flex items-center min-w-fit">
+              <Button
+                variant={activeConversationId === conv.id ? "default" : "ghost"}
+                size="sm"
+                className={`h-8 px-3 rounded-full flex items-center gap-1 text-xs ${activeConversationId === conv.id ? "bg-whatsapp-green text-white" : "text-gray-700"}`}
+                onClick={() => setActiveConversationId(conv.id)}
+              >
+                <MessageSquare size={14} />
+                <span className="truncate max-w-[100px]">{conv.name}</span>
+                {conversations.length > 1 && (
+                  <X
+                    size={14}
+                    className="ml-1 hover:text-red-500"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeConversation(conv.id);
+                    }}
+                  />
+                )}
+              </Button>
+            </div>
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 rounded-full flex items-center justify-center text-whatsapp-darkgreen hover:bg-whatsapp-lightgreen/50"
+            onClick={createNewConversation}
+          >
+            <Plus size={18} />
+          </Button>
+        </div>
+      </div>
+
+      {/* Messages area */}
+      <div
+        className="flex-1 p-4 overflow-y-auto bg-[url('/whatsapp-bg.png')] bg-repeat bg-contain"
+        style={{ backgroundSize: "400px" }}
+      >
+        <div className="flex flex-col space-y-4">
+          {activeConversation.messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex ${message.isFromMe ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-[70%] p-3 rounded-lg shadow-sm ${
+                  message.isFromMe
+                    ? "bg-whatsapp-lightgreen text-whatsapp-text"
+                    : message.isAI
+                      ? "bg-blue-50 text-whatsapp-text border border-blue-100"
+                      : "bg-white text-whatsapp-text"
+                }`}
+              >
+                {message.isAI && !message.isFromMe && (
+                  <div className="flex items-center gap-1 mb-1 text-xs text-blue-500">
+                    <Bot size={12} />
+                    <span>AI Assistant</span>
+                  </div>
+                )}
+                <p className="break-words">{message.body}</p>
+                <p className="text-xs text-whatsapp-darkgray mt-1 text-right">
+                  {new Date(message.timestamp * 1000).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+            </div>
+          ))}
+          {activeConversation.isTyping && (
+            <div className="flex justify-start">
+              <div className="max-w-[70%] p-3 rounded-lg shadow-sm bg-blue-50 text-whatsapp-text border border-blue-100">
+                <div className="flex items-center gap-1 mb-1 text-xs text-blue-500">
+                  <Bot size={12} />
+                  <span>AI Assistant</span>
+                </div>
+                <div className="flex space-x-1 items-center h-6">
+                  <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce"></div>
+                  <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce delay-100"></div>
+                  <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce delay-200"></div>
+                </div>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+
+      {/* Message input */}
+      <div className="bg-white p-3 flex items-center gap-2">
+        <Button
+          variant="ghost"
+          className="text-whatsapp-darkgray rounded-full p-2 h-10 w-10"
+        >
+          <SmilePlus size={24} />
+        </Button>
+        <Button
+          variant="ghost"
+          className="text-whatsapp-darkgray rounded-full p-2 h-10 w-10"
+        >
+          <Paperclip size={24} />
+        </Button>
+        <Input
+          type="text"
+          placeholder="Type a message"
+          className="flex-1 py-2 px-4 bg-whatsapp-gray rounded-lg text-sm focus:outline-none"
+          value={inputMessage}
+          onChange={(e) => setInputMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSendMessage();
+            }
+          }}
+        />
+        <Button
+          variant="ghost"
+          className="text-whatsapp-darkgray rounded-full p-2 h-10 w-10"
+        >
+          <Mic size={24} />
+        </Button>
+        <Button
+          onClick={handleSendMessage}
+          disabled={!inputMessage.trim() || loading}
+          className="bg-whatsapp-green hover:bg-whatsapp-darkgreen text-white rounded-full p-2 h-10 w-10"
+        >
+          <Send size={18} />
+        </Button>
+      </div>
+    </div>
+  );
+}

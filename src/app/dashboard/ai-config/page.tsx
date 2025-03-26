@@ -1,21 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  InfoIcon,
-  Settings,
-  Save,
-  Users,
-  History,
-  MessageSquare,
-} from "lucide-react";
+import { InfoIcon, Settings, Save } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { createClient } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
 
@@ -133,325 +125,231 @@ export default function AIConfig() {
   };
 
   return (
-    <div className="flex h-screen bg-whatsapp-gray overflow-hidden">
-      {/* Left Sidebar */}
-      <div className="w-20 bg-white border-r border-gray-200 flex flex-col items-center py-4">
-        <div className="flex flex-col items-center space-y-6">
-          <Link
-            href="/dashboard"
-            className="p-3 rounded-full bg-gray-100 text-whatsapp-darkgray hover:bg-gray-200"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect width="18" height="18" x="3" y="3" rx="2" />
-              <path d="M9 9h.01" />
-              <path d="M15 9h.01" />
-              <path d="M9 15h.01" />
-              <path d="M15 15h.01" />
-            </svg>
-          </Link>
-          <Link
-            href="/dashboard/accounts"
-            className="p-3 rounded-full bg-gray-100 text-whatsapp-darkgray hover:bg-gray-200"
-          >
-            <Users size={24} />
-          </Link>
-          <Link
-            href="/dashboard/ai-config"
-            className="p-3 rounded-full bg-whatsapp-darkgreen text-white"
-          >
-            <Settings size={24} />
-          </Link>
-          <Link
-            href="/dashboard/history"
-            className="p-3 rounded-full bg-gray-100 text-whatsapp-darkgray hover:bg-gray-200"
-          >
-            <History size={24} />
-          </Link>
-          <Link
-            href="/dashboard/chat-baileys"
-            className="p-3 rounded-full bg-gray-100 text-whatsapp-darkgray hover:bg-gray-200"
-          >
-            <MessageSquare size={24} />
-          </Link>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Top Navigation */}
-        <div className="bg-whatsapp-darkgreen text-white py-3 px-6 flex justify-between items-center">
-          <h1 className="text-xl font-semibold">AI Configuration</h1>
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              className="text-white hover:bg-whatsapp-green"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-6 w-6"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <circle cx="12" cy="10" r="3" />
-                <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662" />
-              </svg>
-              <span className="ml-2">{user?.email}</span>
-            </Button>
+    <div className="p-6 bg-whatsapp-gray">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Settings className="h-6 w-6 text-whatsapp-darkgreen" />
+            <h2 className="text-xl font-semibold text-whatsapp-text">
+              AI Assistant Configuration
+            </h2>
           </div>
-        </div>
 
-        {/* AI Config Content */}
-        <div className="flex-1 overflow-auto p-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <div className="flex items-center gap-3 mb-6">
-                <Settings className="h-6 w-6 text-whatsapp-darkgreen" />
-                <h2 className="text-xl font-semibold text-whatsapp-text">
-                  AI Assistant Configuration
-                </h2>
+          <div className="bg-whatsapp-lightgreen text-sm p-3 px-4 rounded-lg text-whatsapp-darkgreen flex gap-2 items-center mb-6 bg-[#f2f2f2]">
+            <InfoIcon size="14" />
+            <span>
+              Configure how your AI assistant behaves when responding to
+              WhatsApp messages
+            </span>
+          </div>
+
+          <Tabs defaultValue="model" className="w-full">
+            <TabsList className="grid grid-cols-4 mb-6">
+              <TabsTrigger value="model">Model Settings</TabsTrigger>
+              <TabsTrigger value="response">Response Behavior</TabsTrigger>
+              <TabsTrigger value="prompt">System Prompt</TabsTrigger>
+              <TabsTrigger value="api">API Keys</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="model" className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="model">AI Model</Label>
+                  <select
+                    id="model"
+                    className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-whatsapp-green focus:border-transparent"
+                    value={config.model}
+                    onChange={(e) => handleChange("model", e.target.value)}
+                  >
+                    <option value="gpt-4o">GPT-4o (Recommended)</option>
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="gpt-4o-mini">GPT-4o Mini (Faster)</option>
+                    <option value="gpt-3.5-turbo">
+                      GPT-3.5 Turbo (Economy)
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <div className="flex justify-between">
+                    <Label htmlFor="temperature">
+                      Temperature: {config.temperature}
+                    </Label>
+                    <span className="text-sm text-whatsapp-darkgray">
+                      Creativity vs Consistency
+                    </span>
+                  </div>
+                  <div className="py-4">
+                    <Slider
+                      value={[config.temperature]}
+                      max={1}
+                      step={0.1}
+                      onValueChange={(value) =>
+                        handleChange("temperature", value[0])
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between">
+                    <Label htmlFor="max-tokens">
+                      Max Tokens: {config.maxTokens}
+                    </Label>
+                    <span className="text-sm text-whatsapp-darkgray">
+                      Response Length Limit
+                    </span>
+                  </div>
+                  <div className="py-4">
+                    <Slider
+                      value={[config.maxTokens]}
+                      max={4000}
+                      step={100}
+                      onValueChange={(value) =>
+                        handleChange("maxTokens", value[0])
+                      }
+                    />
+                  </div>
+                </div>
               </div>
+            </TabsContent>
 
-              <div className="bg-whatsapp-lightgreen text-sm p-3 px-4 rounded-lg text-whatsapp-darkgreen flex gap-2 items-center mb-6">
-                <InfoIcon size="14" />
-                <span>
-                  Configure how your AI assistant behaves when responding to
-                  WhatsApp messages
-                </span>
+            <TabsContent value="response" className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between">
+                    <Label htmlFor="response-delay">
+                      Response Delay (seconds): {config.responseDelay}
+                    </Label>
+                    <span className="text-sm text-whatsapp-darkgray">
+                      Simulates typing time
+                    </span>
+                  </div>
+                  <div className="py-4">
+                    <Slider
+                      value={[config.responseDelay]}
+                      max={10}
+                      step={1}
+                      onValueChange={(value) =>
+                        handleChange("responseDelay", value[0])
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="typing-indicator">
+                    Show Typing Indicator
+                  </Label>
+                  <div className="flex items-center mt-2">
+                    <input
+                      type="checkbox"
+                      id="typing-indicator"
+                      className="mr-2"
+                      checked={config.showTypingIndicator}
+                      onChange={(e) =>
+                        handleChange("showTypingIndicator", e.target.checked)
+                      }
+                    />
+                    <span className="text-sm text-whatsapp-darkgray">
+                      Display "typing..." before sending messages
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="auto-pause">
+                    Auto-Pause When Human Intervenes
+                  </Label>
+                  <div className="flex items-center mt-2">
+                    <input
+                      type="checkbox"
+                      id="auto-pause"
+                      className="mr-2"
+                      checked={config.autoPauseOnHuman}
+                      onChange={(e) =>
+                        handleChange("autoPauseOnHuman", e.target.checked)
+                      }
+                    />
+                    <span className="text-sm text-whatsapp-darkgray">
+                      Pause AI responses when a human operator replies
+                    </span>
+                  </div>
+                </div>
               </div>
+            </TabsContent>
 
-              <Tabs defaultValue="model" className="w-full">
-                <TabsList className="grid grid-cols-4 mb-6">
-                  <TabsTrigger value="model">Model Settings</TabsTrigger>
-                  <TabsTrigger value="response">Response Behavior</TabsTrigger>
-                  <TabsTrigger value="prompt">System Prompt</TabsTrigger>
-                  <TabsTrigger value="api">API Keys</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="model" className="space-y-6">
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="model">AI Model</Label>
-                      <select
-                        id="model"
-                        className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-whatsapp-green focus:border-transparent"
-                        value={config.model}
-                        onChange={(e) => handleChange("model", e.target.value)}
-                      >
-                        <option value="gpt-4o">GPT-4o (Recommended)</option>
-                        <option value="gpt-4">GPT-4</option>
-                        <option value="gpt-4o-mini">
-                          GPT-4o Mini (Faster)
-                        </option>
-                        <option value="gpt-3.5-turbo">
-                          GPT-3.5 Turbo (Economy)
-                        </option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between">
-                        <Label htmlFor="temperature">
-                          Temperature: {config.temperature}
-                        </Label>
-                        <span className="text-sm text-whatsapp-darkgray">
-                          Creativity vs Consistency
-                        </span>
-                      </div>
-                      <div className="py-4">
-                        <Slider
-                          value={[config.temperature]}
-                          max={1}
-                          step={0.1}
-                          onValueChange={(value) =>
-                            handleChange("temperature", value[0])
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between">
-                        <Label htmlFor="max-tokens">
-                          Max Tokens: {config.maxTokens}
-                        </Label>
-                        <span className="text-sm text-whatsapp-darkgray">
-                          Response Length Limit
-                        </span>
-                      </div>
-                      <div className="py-4">
-                        <Slider
-                          value={[config.maxTokens]}
-                          max={4000}
-                          step={100}
-                          onValueChange={(value) =>
-                            handleChange("maxTokens", value[0])
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="response" className="space-y-6">
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between">
-                        <Label htmlFor="response-delay">
-                          Response Delay (seconds): {config.responseDelay}
-                        </Label>
-                        <span className="text-sm text-whatsapp-darkgray">
-                          Simulates typing time
-                        </span>
-                      </div>
-                      <div className="py-4">
-                        <Slider
-                          value={[config.responseDelay]}
-                          max={10}
-                          step={1}
-                          onValueChange={(value) =>
-                            handleChange("responseDelay", value[0])
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="typing-indicator">
-                        Show Typing Indicator
-                      </Label>
-                      <div className="flex items-center mt-2">
-                        <input
-                          type="checkbox"
-                          id="typing-indicator"
-                          className="mr-2"
-                          checked={config.showTypingIndicator}
-                          onChange={(e) =>
-                            handleChange(
-                              "showTypingIndicator",
-                              e.target.checked,
-                            )
-                          }
-                        />
-                        <span className="text-sm text-whatsapp-darkgray">
-                          Display "typing..." before sending messages
-                        </span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="auto-pause">
-                        Auto-Pause When Human Intervenes
-                      </Label>
-                      <div className="flex items-center mt-2">
-                        <input
-                          type="checkbox"
-                          id="auto-pause"
-                          className="mr-2"
-                          checked={config.autoPauseOnHuman}
-                          onChange={(e) =>
-                            handleChange("autoPauseOnHuman", e.target.checked)
-                          }
-                        />
-                        <span className="text-sm text-whatsapp-darkgray">
-                          Pause AI responses when a human operator replies
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="prompt" className="space-y-6">
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="system-prompt">System Prompt</Label>
-                      <Textarea
-                        id="system-prompt"
-                        className="w-full mt-1 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-whatsapp-green focus:border-transparent min-h-[200px]"
-                        placeholder="You are a helpful WhatsApp assistant..."
-                        value={config.systemPrompt}
-                        onChange={(e) =>
-                          handleChange("systemPrompt", e.target.value)
-                        }
-                      />
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="api" className="space-y-6">
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="openai-key">OpenAI API Key</Label>
-                      <Input
-                        id="openai-key"
-                        type="password"
-                        className="w-full mt-1"
-                        placeholder="sk-..."
-                        value={config.openaiKey}
-                        onChange={(e) =>
-                          handleChange("openaiKey", e.target.value)
-                        }
-                      />
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-
-              <div className="mt-8 flex justify-end">
-                <Button
-                  className="bg-whatsapp-darkgreen hover:bg-whatsapp-green text-white flex items-center gap-2"
-                  onClick={handleSaveConfig}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <svg
-                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save size={16} />
-                      Save Configuration
-                    </>
-                  )}
-                </Button>
+            <TabsContent value="prompt" className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="system-prompt">System Prompt</Label>
+                  <Textarea
+                    id="system-prompt"
+                    className="w-full mt-1 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-whatsapp-green focus:border-transparent min-h-[200px]"
+                    placeholder="You are a helpful WhatsApp assistant..."
+                    value={config.systemPrompt}
+                    onChange={(e) =>
+                      handleChange("systemPrompt", e.target.value)
+                    }
+                  />
+                </div>
               </div>
-            </div>
+            </TabsContent>
+
+            <TabsContent value="api" className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="openai-key">OpenAI API Key</Label>
+                  <Input
+                    id="openai-key"
+                    type="password"
+                    className="w-full mt-1"
+                    placeholder="sk-..."
+                    value={config.openaiKey}
+                    onChange={(e) => handleChange("openaiKey", e.target.value)}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <div className="mt-8 flex justify-end">
+            <Button
+              className="bg-whatsapp-darkgreen hover:bg-whatsapp-green text-white flex items-center gap-2"
+              onClick={handleSaveConfig}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save size={16} />
+                  Save Configuration
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </div>
