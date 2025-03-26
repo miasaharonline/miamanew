@@ -5,14 +5,39 @@ let Client, LocalAuth;
 if (typeof window === "undefined") {
   try {
     // Server-side import with proper ffmpeg handling
-    const ffmpegPath = require("ffmpeg-static");
-    // Ensure ffmpeg is properly handled before importing whatsapp-web.js
+    let ffmpegPath;
     try {
-      // Import and set up ffmpeg mock before importing whatsapp-web.js
+      ffmpegPath = require("ffmpeg-static");
+    } catch (ffmpegPathError) {
+      console.error("Failed to load ffmpeg-static:", ffmpegPathError);
+      ffmpegPath = null;
+    }
+
+    // Set up global ffmpeg mock before importing whatsapp-web.js
+    try {
+      // Import the ffmpeg mock and assign it to global.ffmpeg
       const ffmpegMock = require("./ffmpeg-setup");
-      global.ffmpeg = ffmpegMock;
+      // Make sure global object exists
+      if (typeof global === "undefined") {
+        (global as any) = {};
+      }
+      // Explicitly define global.ffmpeg with the mock object
+      (global as any).ffmpeg = ffmpegMock;
     } catch (ffmpegError) {
       console.error("Failed to set up ffmpeg mock:", ffmpegError);
+      // Create a basic mock if the import fails
+      if (typeof global === "undefined") {
+        (global as any) = {};
+      }
+      (global as any).ffmpeg = {
+        setFfmpegPath: function (path) {
+          console.log(
+            "Fallback mock ffmpeg.setFfmpegPath called with path:",
+            path,
+          );
+        },
+        ffmpegPath: null,
+      };
     }
 
     const WhatsAppWeb = require("whatsapp-web.js");
@@ -145,6 +170,23 @@ export const initWhatsApp = async () => {
     try {
       // Use mock ffmpeg implementation
       console.log("Using mock ffmpeg implementation");
+
+      // Ensure global.ffmpeg exists before creating the client
+      if (typeof global === "undefined") {
+        (global as any) = {};
+      }
+
+      if (!(global as any).ffmpeg) {
+        (global as any).ffmpeg = {
+          setFfmpegPath: function (path) {
+            console.log(
+              "Inline mock ffmpeg.setFfmpegPath called with path:",
+              path,
+            );
+          },
+          ffmpegPath: null,
+        };
+      }
 
       client = new Client({
         authStrategy: new LocalAuth({ clientId: "whatsapp-ai-assistant" }),

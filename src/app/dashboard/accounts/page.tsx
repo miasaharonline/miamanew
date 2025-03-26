@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { createClient } from "../../../../supabase/server";
-import QRCodeScanner from "@/components/qr-code-scanner";
+// QR code scanner removed to fix errors
 import Link from "next/link";
 
 export default async function Accounts() {
@@ -125,7 +125,9 @@ export default async function Accounts() {
                     Scan the QR code with your WhatsApp app to connect your
                     account
                   </p>
-                  <QRCodeScanner />
+                  <div className="flex items-center justify-center p-8 border border-dashed border-gray-300 rounded-lg">
+                    QR Scanner temporarily disabled
+                  </div>
                 </div>
               </div>
 

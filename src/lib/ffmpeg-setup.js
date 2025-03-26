@@ -9,4 +9,5 @@ const ffmpeg = {
   ffmpegPath: null,
 };
 
+// Export the mock object directly
 module.exports = ffmpeg;

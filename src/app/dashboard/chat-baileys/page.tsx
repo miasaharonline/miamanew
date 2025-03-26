@@ -10,8 +10,7 @@ import {
 import { redirect } from "next/navigation";
 import { createClient } from "../../../../supabase/server";
 import Link from "next/link";
-import BaileysChatList from "@/components/baileys-chat-list";
-import BaileysChatInterface from "@/components/baileys-chat-interface";
+// Baileys components removed to fix errors
 
 export default async function BaileysChat() {
   const supabase = await createClient();
@@ -97,13 +96,16 @@ export default async function BaileysChat() {
         {/* Chat Interface */}
         <div className="flex-1 flex overflow-hidden">
           {/* Chat list - hidden on mobile */}
-          <div className="w-1/3 border-r border-gray-200 hidden md:block">
-            <BaileysChatList />
-          </div>
-
-          {/* Chat messages */}
-          <div className="flex-1">
-            <BaileysChatInterface selectedChat="" aiActive={true} />
+          <div className="flex-1 flex items-center justify-center bg-gray-50">
+            <div className="text-center p-8">
+              <MessageSquare className="mx-auto h-16 w-16 text-whatsapp-darkgray opacity-20" />
+              <h3 className="mt-4 text-lg font-medium text-whatsapp-text">
+                Chat functionality temporarily disabled
+              </h3>
+              <p className="mt-2 text-sm text-whatsapp-darkgray">
+                We're working on fixing the WhatsApp integration
+              </p>
+            </div>
           </div>
         </div>
       </div>

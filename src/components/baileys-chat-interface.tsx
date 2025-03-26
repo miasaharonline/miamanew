@@ -266,13 +266,25 @@ export default function BaileysChatInterface({
                   }`}
                 >
                   <p className="break-words">
-                    {typeof message.body === "string"
-                      ? message.body
-                      : message.body === null || message.body === undefined
-                        ? ""
-                        : typeof message.body === "object"
-                          ? JSON.stringify(message.body)
-                          : String(message.body || "")}
+                    {(() => {
+                      // Safely convert any message body to string
+                      if (typeof message.body === "string") {
+                        return message.body;
+                      } else if (
+                        message.body === null ||
+                        message.body === undefined
+                      ) {
+                        return "";
+                      } else if (typeof message.body === "object") {
+                        try {
+                          return JSON.stringify(message.body);
+                        } catch (e) {
+                          return "[Object]";
+                        }
+                      } else {
+                        return String(message.body || "");
+                      }
+                    })()}
                   </p>
                   <p className="text-xs text-whatsapp-darkgray mt-1 text-right">
                     {new Date(message.timestamp * 1000).toLocaleTimeString([], {

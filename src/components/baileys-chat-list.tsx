@@ -92,18 +92,34 @@ export default function BaileysChatList() {
               </div>
               <div className="flex justify-between items-center">
                 <p className="text-sm text-whatsapp-darkgray truncate">
-                  {typeof chat.lastMessage === "string"
-                    ? chat.lastMessage
-                    : chat.lastMessage && typeof chat.lastMessage === "object"
-                      ? typeof chat.lastMessage.body === "string"
-                        ? chat.lastMessage.body
-                        : chat.lastMessage.body === null ||
-                            chat.lastMessage.body === undefined
-                          ? ""
-                          : typeof chat.lastMessage.body === "object"
-                            ? JSON.stringify(chat.lastMessage.body)
-                            : String(chat.lastMessage.body || "")
-                      : "No messages yet"}
+                  {(() => {
+                    // Safely convert any lastMessage to string
+                    if (typeof chat.lastMessage === "string") {
+                      return chat.lastMessage;
+                    } else if (!chat.lastMessage) {
+                      return "No messages yet";
+                    } else if (typeof chat.lastMessage === "object") {
+                      // Handle lastMessage.body
+                      if (typeof chat.lastMessage.body === "string") {
+                        return chat.lastMessage.body;
+                      } else if (
+                        chat.lastMessage.body === null ||
+                        chat.lastMessage.body === undefined
+                      ) {
+                        return "";
+                      } else if (typeof chat.lastMessage.body === "object") {
+                        try {
+                          return JSON.stringify(chat.lastMessage.body);
+                        } catch (e) {
+                          return "[Object]";
+                        }
+                      } else {
+                        return String(chat.lastMessage.body || "");
+                      }
+                    } else {
+                      return "No messages yet";
+                    }
+                  })()}
                 </p>
                 {chat.unreadCount > 0 && (
                   <span className="bg-whatsapp-green text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
